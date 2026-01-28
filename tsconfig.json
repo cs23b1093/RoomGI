@@ -7,19 +7,20 @@
     "esModuleInterop": true,
     "allowJs": true,
     "outDir": "./dist",
-    "rootDir": "./",
+    "rootDir": "./src",
     "strict": true,
     "moduleDetection": "force",
     "resolveJsonModule": true,
     "isolatedModules": true,
     "declaration": true,
     "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+    "allowImportingTsExtensions": false,
+    "noEmit": false
   },
   "include": [
-    "**/*.ts",
-    "**/*.js"
-  ],
+    "src/**/*.ts"
+, "src/server.ts"  ],
   "exclude": [
     "node_modules",
     "dist"
