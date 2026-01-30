@@ -2,7 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ProtectedRoute, Layout } from './components';
-import { LoginPage, RegisterPage, HomePage } from './pages';
+import { LoginPage, RegisterPage, HomePage, PropertiesPage, PropertyDetailPage } from './pages';
 
 const AppRoutes: React.FC = () => {
   const { user } = useAuth();
@@ -25,6 +25,22 @@ const AppRoutes: React.FC = () => {
               <HomePage />
             </Layout>
           </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/properties"
+        element={
+          <Layout>
+            <PropertiesPage />
+          </Layout>
+        }
+      />
+      <Route
+        path="/property/:id"
+        element={
+          <Layout>
+            <PropertyDetailPage />
+          </Layout>
         }
       />
       <Route
