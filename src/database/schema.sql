@@ -1,7 +1,7 @@
 -- Rental Truth Platform Database Schema
-
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 -- Users table
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     email VARCHAR(255) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
@@ -17,7 +17,16 @@ CREATE TABLE properties (
     location VARCHAR(500) NOT NULL,
     rent DECIMAL(10,2) NOT NULL,
     property_type VARCHAR(20) CHECK (property_type IN ('apartment', 'house', 'condo', 'studio')) NOT NULL,
+    beds_available INTEGER DEFAULT 1,
+    total_beds INTEGER DEFAULT 1,
     verified BOOLEAN DEFAULT FALSE,
+    -- Lifestyle scores (1-3: low/medium/high)
+    nightlife_score INTEGER CHECK (nightlife_score >= 1 AND nightlife_score <= 3) DEFAULT 2,
+    transit_score INTEGER CHECK (transit_score >= 1 AND transit_score <= 3) DEFAULT 2,
+    safety_score INTEGER CHECK (safety_score >= 1 AND safety_score <= 3) DEFAULT 2,
+    quietness_score INTEGER CHECK (quietness_score >= 1 AND quietness_score <= 3) DEFAULT 2,
+    food_score INTEGER CHECK (food_score >= 1 AND food_score <= 3) DEFAULT 2,
+    student_friendly_score INTEGER CHECK (student_friendly_score >= 1 AND student_friendly_score <= 3) DEFAULT 2,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -58,7 +67,15 @@ SELECT
     p.location,
     p.rent,
     p.property_type,
+    p.beds_available,
+    p.total_beds,
     p.verified,
+    p.nightlife_score,
+    p.transit_score,
+    p.safety_score,
+    p.quietness_score,
+    p.food_score,
+    p.student_friendly_score,
     COUNT(r.id) as review_count,
     AVG(r.reality_rating) as avg_reality_rating,
     AVG(CASE 
@@ -70,4 +87,5 @@ SELECT
 FROM properties p
 LEFT JOIN reviews r ON p.id = r.property_id
 LEFT JOIN flags f ON p.id = f.property_id
-GROUP BY p.id, p.location, p.rent, p.property_type, p.verified;
+GROUP BY p.id, p.location, p.rent, p.property_type, p.beds_available, p.total_beds, p.verified,
+         p.nightlife_score, p.transit_score, p.safety_score, p.quietness_score, p.food_score, p.student_friendly_score;

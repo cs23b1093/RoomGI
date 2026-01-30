@@ -1,17 +1,33 @@
 import express from 'express';
+import { createServer } from 'http';
 import cookieParser from 'cookie-parser';
 import { config } from './config/index.js';
 import { logger } from './utils/index.js';
 import { errorHandler } from './middleware/index.js';
 import routes from './routes/index.js';
 import pool from './config/database.js';
+import cors from 'cors';
+import { socketService } from './socket/socketService.js';
 
 const app = express();
+const server = createServer(app);
 
+// Initialize Socket.io
+socketService.initialize(server);
+
+// Try to connect to database, but don't fail if it's not available
 pool.connect()
-    .then(() => logger.info('Connected to PostgreSQL database'))
-    .catch(err => logger.error('Database connection error:', err));
+    .then(() => {
+        logger.info('Connected to PostgreSQL database');
+    })
+    .catch(err => {
+        logger.error('Database connection error:', err);
+    });
 
+app.use(cors({
+        origin: '*',
+        credentials: true
+    }));
 // Middleware
 app.use(express.json());
 app.use(cookieParser());
@@ -29,6 +45,10 @@ app.get('/', (_req, res) => {
       properties: '/api/properties',
       reviews: '/api/reviews',
       flags: '/api/flags'
+    },
+    features: {
+      realtime: 'Socket.io enabled',
+      viewers: 'Real-time property viewing'
     }
   });
 });
@@ -37,7 +57,8 @@ app.get('/', (_req, res) => {
 app.use(errorHandler);
 
 // Start server
-app.listen(config.port, () => {
+server.listen(config.port, () => {
   logger.info(`Rental Truth API running on port ${config.port}`);
   logger.info(`Environment: ${config.nodeEnv}`);
+  logger.info('Socket.io initialized for real-time features');
 });
