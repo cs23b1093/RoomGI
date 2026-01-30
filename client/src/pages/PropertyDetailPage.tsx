@@ -4,6 +4,7 @@ import type { Property } from '../hooks';
 import { useAuth } from '../context/AuthContext';
 import { socketService } from '../lib/socket';
 import { useToast, ToastContainer, NeighborhoodDNA, ReviewsSection } from '../components';
+import { PropertyDetailMiniMap } from '../components/PropertyDetailMiniMap';
 import type { ActivityItem } from '../types/activity';
 import api from '../lib/axios';
 
@@ -320,6 +321,19 @@ export const PropertyDetailPage: React.FC = () => {
                   and is well-connected to major transport hubs.
                 </p>
               </div>
+
+              {/* Location Map */}
+              {property.latitude && property.longitude && (
+                <div className="bg-white rounded-lg shadow-md p-6">
+                  <h2 className="text-xl font-semibold text-gray-900 mb-4">Location</h2>
+                  <PropertyDetailMiniMap
+                    latitude={property.latitude}
+                    longitude={property.longitude}
+                    location={property.location}
+                    className="h-64 w-full rounded-lg"
+                  />
+                </div>
+              )}
 
               {/* Lifestyle Scores */}
               <div className="bg-white rounded-lg shadow-md p-6">
