@@ -31,10 +31,22 @@ export const PropertiesPage: React.FC = () => {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Find Your Perfect Property</h1>
-        <p className="text-gray-600">
-          Discover rental properties with honest reviews and deposit transparency
-        </p>
+        <div className="flex justify-between items-start">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Find Your Perfect Property</h1>
+            <p className="text-gray-600">
+              Discover rental properties with honest reviews and deposit transparency
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <a
+              href="/properties/map"
+              className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200 flex items-center gap-2"
+            >
+              🗺️ Map View
+            </a>
+          </div>
+        </div>
       </div>
 
       {/* Filter Bar */}

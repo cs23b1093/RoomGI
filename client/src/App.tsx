@@ -1,8 +1,8 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import { ProtectedRoute, Layout } from './components';
-import { LoginPage, RegisterPage, HomePage, PropertiesPage, PropertyDetailPage, OwnerDashboard } from './pages';
+import { ProtectedRoute, Layout, ErrorBoundary } from './components';
+import { LoginPage, RegisterPage, HomePage, PropertiesPage, PropertiesMapPage, PropertyDetailPage, OwnerDashboard, NotFoundPage } from './pages';
 
 const AppRoutes: React.FC = () => {
   const { user } = useAuth();
@@ -32,6 +32,14 @@ const AppRoutes: React.FC = () => {
         element={
           <Layout>
             <PropertiesPage />
+          </Layout>
+        }
+      />
+      <Route
+        path="/properties/map"
+        element={
+          <Layout>
+            <PropertiesMapPage />
           </Layout>
         }
       />
@@ -66,19 +74,26 @@ const AppRoutes: React.FC = () => {
           </ProtectedRoute>
         }
       />
+      {/* Catch-all route for 404 */}
+      <Route
+        path="*"
+        element={<NotFoundPage />}
+      />
     </Routes>
   );
 };
 
 function App() {
   return (
-    <AuthProvider>
-      <Router>
-        <div className="h-screen w-full bg-gray-50">
-          <AppRoutes />
-        </div>
-      </Router>
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <Router>
+          <div className="h-screen w-full bg-gray-50">
+            <AppRoutes />
+          </div>
+        </Router>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }
 

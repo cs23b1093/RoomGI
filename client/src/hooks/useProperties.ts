@@ -10,6 +10,8 @@ export interface Property {
   bedsAvailable: number;
   totalBeds: number;
   verified: boolean;
+  latitude?: number;
+  longitude?: number;
   nightlifeScore: number;
   transitScore: number;
   safetyScore: number;
@@ -92,6 +94,7 @@ export function useProperties(filters?: LifestyleFilters) {
     properties,
     loading,
     error,
-    refetch
+    refetch,
+    searchByLifestyle: refetch
   };
 }
