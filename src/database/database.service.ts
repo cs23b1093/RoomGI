@@ -3,6 +3,7 @@ import { User, LoginDto, RegisterDto } from '../modules/auth/auth.types.js';
 import { Property, CreatePropertyDto, LifestyleFilters, LIFESTYLE_SCORE_MAP } from '../modules/property/property.types.js';
 import { Review, CreateReviewDto } from '../modules/review/review.types.js';
 import { ActivityItem } from '../types/activity.js';
+import { logger } from '../utils/logger.js';
 
 export class DatabaseService {
   // User operations
@@ -39,10 +40,12 @@ export class DatabaseService {
     const query = `
       INSERT INTO properties (
         owner_id, location, rent, property_type, beds_available, total_beds,
+        latitude, longitude,
         nightlife_score, transit_score, safety_score, quietness_score, food_score, student_friendly_score
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
       RETURNING id, owner_id, location, rent, property_type, beds_available, total_beds,
+                latitude, longitude,
                 nightlife_score, transit_score, safety_score, quietness_score, food_score, student_friendly_score,
                 verified, created_at, updated_at
     `;
@@ -54,6 +57,8 @@ export class DatabaseService {
       propertyData.propertyType,
       propertyData.bedsAvailable || 1,
       propertyData.totalBeds || 1,
+      propertyData.latitude || null,
+      propertyData.longitude || null,
       propertyData.nightlifeScore || 2,
       propertyData.transitScore || 2,
       propertyData.safetyScore || 2,
@@ -68,6 +73,7 @@ export class DatabaseService {
   async getPropertyById(id: string): Promise<Property | null> {
     const query = `
       SELECT id, owner_id, location, rent, property_type, beds_available, total_beds,
+             latitude, longitude,
              nightlife_score, transit_score, safety_score, quietness_score, food_score, student_friendly_score,
              verified, created_at, updated_at
       FROM properties WHERE id = $1
@@ -82,6 +88,7 @@ export class DatabaseService {
   async getPropertiesByOwner(ownerId: string): Promise<Property[]> {
     const query = `
       SELECT id, owner_id, location, rent, property_type, beds_available, total_beds,
+             latitude, longitude,
              nightlife_score, transit_score, safety_score, quietness_score, food_score, student_friendly_score,
              verified, created_at, updated_at
       FROM properties WHERE owner_id = $1
@@ -94,6 +101,7 @@ export class DatabaseService {
   async searchProperties(location?: string, maxRent?: number): Promise<Property[]> {
     let query = `
       SELECT id, owner_id, location, rent, property_type, beds_available, total_beds,
+             latitude, longitude,
              nightlife_score, transit_score, safety_score, quietness_score, food_score, student_friendly_score,
              verified, created_at, updated_at
       FROM properties WHERE 1=1
@@ -123,6 +131,7 @@ export class DatabaseService {
   async searchPropertiesByLifestyle(filters: LifestyleFilters): Promise<Property[]> {
     let query = `
       SELECT id, owner_id, location, rent, property_type, beds_available, total_beds,
+             latitude, longitude,
              nightlife_score, transit_score, safety_score, quietness_score, food_score, student_friendly_score,
              verified, created_at, updated_at
       FROM properties WHERE 1=1
@@ -243,6 +252,8 @@ export class DatabaseService {
       propertyType: row.property_type,
       bedsAvailable: row.beds_available,
       totalBeds: row.total_beds,
+      latitude: row.latitude ? parseFloat(row.latitude) : undefined,
+      longitude: row.longitude ? parseFloat(row.longitude) : undefined,
       nightlifeScore: row.nightlife_score,
       transitScore: row.transit_score,
       safetyScore: row.safety_score,

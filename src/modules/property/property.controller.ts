@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { PropertyService } from './property.service.js';
 import { LifestyleFilters } from './property.types.js';
 import { socketService } from '../../socket/socketService.js';
+import pool from '../../config/database.js';
 
 export class PropertyController {
   private propertyService = new PropertyService();
@@ -20,6 +21,8 @@ export class PropertyController {
         propertyType, 
         bedsAvailable, 
         totalBeds,
+        latitude,
+        longitude,
         nightlifeScore,
         transitScore,
         safetyScore,
@@ -38,6 +41,8 @@ export class PropertyController {
         propertyType,
         bedsAvailable: bedsAvailable ? Number(bedsAvailable) : undefined,
         totalBeds: totalBeds ? Number(totalBeds) : undefined,
+        latitude: latitude ? Number(latitude) : undefined,
+        longitude: longitude ? Number(longitude) : undefined,
         nightlifeScore: nightlifeScore ? Number(nightlifeScore) : undefined,
         transitScore: transitScore ? Number(transitScore) : undefined,
         safetyScore: safetyScore ? Number(safetyScore) : undefined,
@@ -343,6 +348,86 @@ export class PropertyController {
       const count = socketService.getViewerCount(id);
       res.json({ viewingCount: count });
     } catch (error) {
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  }
+
+  async bookProperty(req: Request, res: Response) {
+    try {
+      const user = (req as any).user;
+      const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+      const { bedsRequested } = req.body;
+
+      if (!bedsRequested || bedsRequested < 1) {
+        return res.status(400).json({ error: 'Invalid beds requested' });
+      }
+
+      // Check if property exists and has availability
+      const property = await this.propertyService.getPropertyById(id);
+      if (!property) {
+        return res.status(404).json({ error: 'Property not found' });
+      }
+
+      if (property.bedsAvailable < bedsRequested) {
+        return res.status(400).json({ error: 'Not enough beds available' });
+      }
+
+      // Create booking record in database
+      const bookingQuery = `
+        INSERT INTO bookings (property_id, tenant_id, beds_requested, status, message)
+        VALUES ($1, $2, $3, 'pending', 'Booking request submitted')
+        RETURNING id, created_at
+      `;
+      
+      const bookingResult = await pool.query(bookingQuery, [id, user.id, bedsRequested]);
+
+      // Log the activity
+      await this.propertyService.logActivity(id, 'booking_request', 
+        `Booking request: ${bedsRequested} bed${bedsRequested > 1 ? 's' : ''} requested by ${user.email}`);
+
+      // Emit real-time booking activity
+      socketService.emitBookingActivity(id, `New booking request for ${bedsRequested} bed${bedsRequested > 1 ? 's' : ''}!`);
+
+      res.json({ 
+        message: 'Booking request submitted successfully',
+        bookingId: bookingResult.rows[0].id,
+        bedsRequested,
+        propertyId: id,
+        status: 'pending'
+      });
+    } catch (error) {
+      console.error('Book property error:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  }
+
+  async logPropertyActivity(req: Request, res: Response) {
+    try {
+      const user = (req as any).user;
+      const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+      const { type, message } = req.body;
+
+      if (!type || !message) {
+        return res.status(400).json({ error: 'Type and message are required' });
+      }
+
+      // Check if property exists
+      const property = await this.propertyService.getPropertyById(id);
+      if (!property) {
+        return res.status(404).json({ error: 'Property not found' });
+      }
+
+      // Log the activity with user context
+      const activityMessage = `${message} (by ${user.email})`;
+      await this.propertyService.logActivity(id, type, activityMessage);
+
+      res.json({ 
+        message: 'Activity logged successfully',
+        type,
+        activityMessage
+      });
+    } catch (error) {
+      console.error('Log activity error:', error);
       res.status(500).json({ error: 'Internal server error' });
     }
   }

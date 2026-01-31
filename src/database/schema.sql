@@ -20,6 +20,8 @@ CREATE TABLE properties (
     beds_available INTEGER DEFAULT 1,
     total_beds INTEGER DEFAULT 1,
     verified BOOLEAN DEFAULT FALSE,
+    latitude DECIMAL(10, 8),
+    longitude DECIMAL(11, 8),
     -- Lifestyle scores (1-3: low/medium/high)
     nightlife_score INTEGER CHECK (nightlife_score >= 1 AND nightlife_score <= 3) DEFAULT 2,
     transit_score INTEGER CHECK (transit_score >= 1 AND transit_score <= 3) DEFAULT 2,

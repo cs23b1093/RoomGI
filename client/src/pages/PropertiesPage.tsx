@@ -1,6 +1,7 @@
 import React from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { FilterBar } from '../components/FilterBar';
-import { PropertyCard } from '../components/PropertyCard';
+import { PropertyCard, PropertyCardSkeleton } from '../components';
 import { useProperties, type LifestyleFilters } from '../hooks';
 
 export const PropertiesPage: React.FC = () => {
@@ -12,98 +13,173 @@ export const PropertiesPage: React.FC = () => {
 
   if (error) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"
+      >
         <div className="text-center">
-          <div className="text-red-600 text-lg font-medium mb-2">Error Loading Properties</div>
+          <motion.div 
+            className="text-red-600 text-lg font-medium mb-2"
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ delay: 0.2 }}
+          >
+            Error Loading Properties
+          </motion.div>
           <p className="text-gray-600 mb-4">{error}</p>
-          <button
+          <motion.button
             onClick={() => refetch()}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md"
           >
             Try Again
-          </button>
+          </motion.button>
         </div>
-      </div>
+      </motion.div>
     );
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8"
+    >
       {/* Header */}
-      <div className="mb-8">
-        <div className="flex justify-between items-start">
+      <motion.div
+        initial={{ y: -20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        className="mb-6 sm:mb-8"
+      >
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Find Your Perfect Property</h1>
-            <p className="text-gray-600">
-              Discover rental properties with honest reviews and deposit transparency
-            </p>
-          </div>
-          <div className="flex gap-2">
-            <a
-              href="/properties/map"
-              className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200 flex items-center gap-2"
+            <motion.h1 
+              className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2"
+              initial={{ x: -20, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              transition={{ delay: 0.1 }}
             >
-              🗺️ Map View
-            </a>
+              Find Your Perfect Property
+            </motion.h1>
+            <motion.p 
+              className="text-gray-600 text-sm sm:text-base"
+              initial={{ x: -20, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              transition={{ delay: 0.2 }}
+            >
+              Discover rental properties with honest reviews and deposit transparency
+            </motion.p>
           </div>
+          <motion.div 
+            className="flex gap-2"
+            initial={{ x: 20, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            transition={{ delay: 0.3 }}
+          >
+            <motion.a
+              href="/properties/map"
+              whileHover={{ scale: 1.05, y: -2 }}
+              whileTap={{ scale: 0.95 }}
+              className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-3 sm:px-4 rounded-md transition-colors duration-200 flex items-center gap-2 text-sm sm:text-base"
+            >
+              🗺️ <span className="hidden sm:inline">Map View</span>
+            </motion.a>
+          </motion.div>
         </div>
-      </div>
+      </motion.div>
 
       {/* Filter Bar */}
-      <FilterBar onFiltersChange={handleFiltersChange} loading={loading} />
+      <motion.div
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.4 }}
+      >
+        <FilterBar onFiltersChange={handleFiltersChange} loading={loading} />
+      </motion.div>
 
       {/* Results Header */}
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-xl font-semibold text-gray-900">
+      <motion.div
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.5 }}
+        className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-2"
+      >
+        <h2 className="text-lg sm:text-xl font-semibold text-gray-900">
           {loading ? 'Searching...' : `${properties.length} Properties Found`}
         </h2>
         {!loading && properties.length > 0 && (
-          <div className="text-sm text-gray-500">
+          <div className="text-xs sm:text-sm text-gray-500">
             Sorted by newest first
           </div>
         )}
-      </div>
+      </motion.div>
 
       {/* Loading State */}
       {loading && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6"
+        >
           {[...Array(6)].map((_, index) => (
-            <div key={index} className="bg-white rounded-lg shadow-md p-6 animate-pulse">
-              <div className="h-4 bg-gray-200 rounded mb-4"></div>
-              <div className="h-8 bg-gray-200 rounded mb-4"></div>
-              <div className="h-4 bg-gray-200 rounded mb-2"></div>
-              <div className="h-4 bg-gray-200 rounded mb-4"></div>
-              <div className="h-10 bg-gray-200 rounded"></div>
-            </div>
+            <PropertyCardSkeleton key={index} />
           ))}
-        </div>
+        </motion.div>
       )}
 
       {/* Properties Grid */}
-      {!loading && properties.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {properties.map((property) => (
-            <PropertyCard key={property.id} property={property} />
-          ))}
-        </div>
-      )}
+      <AnimatePresence mode="wait">
+        {!loading && properties.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6"
+          >
+            {properties.map((property, index) => (
+              <motion.div
+                key={property.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+              >
+                <PropertyCard property={property} />
+              </motion.div>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Empty State */}
       {!loading && properties.length === 0 && (
-        <div className="text-center py-12">
-          <div className="text-gray-400 text-6xl mb-4">🏠</div>
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="text-center py-12"
+        >
+          <motion.div 
+            className="text-gray-400 text-4xl sm:text-6xl mb-4"
+            animate={{ rotate: [0, 10, -10, 0] }}
+            transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
+          >
+            🏠
+          </motion.div>
           <h3 className="text-lg font-medium text-gray-900 mb-2">No Properties Found</h3>
-          <p className="text-gray-600 mb-4">
+          <p className="text-gray-600 mb-4 text-sm sm:text-base px-4">
             Try adjusting your filters or search criteria to find more properties.
           </p>
-          <button
+          <motion.button
             onClick={() => handleFiltersChange({})}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md"
           >
             Clear All Filters
-          </button>
-        </div>
+          </motion.button>
+        </motion.div>
       )}
-    </div>
+    </motion.div>
   );
 };

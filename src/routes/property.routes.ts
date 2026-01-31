@@ -22,6 +22,8 @@ router.get('/:id/neighborhood', (req, res) => {
 // Protected routes
 router.post('/', authMiddleware, (req, res) => propertyController.createProperty(req, res));
 router.patch('/:id/availability', authMiddleware, (req, res) => propertyController.updateAvailability(req, res));
+router.post('/:id/book', authMiddleware, (req, res) => propertyController.bookProperty(req, res));
+router.post('/:id/activity', authMiddleware, (req, res) => propertyController.logPropertyActivity(req, res));
 router.post('/:id/generate-activity', authMiddleware, (req, res) => propertyController.generateMockActivity(req, res));
 router.post('/:id/mock-booking', authMiddleware, (req, res) => propertyController.simulateBooking(req, res));
 router.post('/simulate/high-traffic', authMiddleware, (req, res) => propertyController.simulateHighTraffic(req, res));

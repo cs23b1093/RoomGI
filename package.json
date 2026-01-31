@@ -9,6 +9,7 @@
     "build": "tsc",
     "start": "node dist/server.js",
     "start:dev": "npm run build && npm start",
+    "db:test": "node --loader ts-node/esm src/database/test-connection.ts",
     "db:migrate": "node --loader ts-node/esm src/database/migrate.ts migrate",
     "db:seed": "node --loader ts-node/esm src/database/migrate.ts seed",
     "db:reset": "node --loader ts-node/esm src/database/migrate.ts reset"
