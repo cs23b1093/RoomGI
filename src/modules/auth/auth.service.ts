@@ -14,6 +14,7 @@ export class AuthService {
         throw new Error('User already exists');
       }
       // Create user (in production, hash the password!)
+      logger.info ('dert');
       const user = await db.createUser(userData);
       const token = `token_${user.id}_${Date.now()}`;
       

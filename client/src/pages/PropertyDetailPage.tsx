@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import toast from 'react-hot-toast';
 import type { Property } from '../hooks';
 import { useAuth } from '../context/AuthContext';
 import { socketService } from '../lib/socket';
-import { useToast, ToastContainer, NeighborhoodDNA, ReviewsSection } from '../components';
+import { NeighborhoodDNA, ReviewsSection, LiveIndicator, AnimatedCounter, PropertyDetailSkeleton } from '../components';
 import { PropertyDetailMiniMap } from '../components/PropertyDetailMiniMap';
 import type { ActivityItem } from '../types/activity';
 import api from '../lib/axios';
@@ -12,7 +14,6 @@ export const PropertyDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { toasts, addToast, removeToast } = useToast();
   
   const [property, setProperty] = useState<Property | null>(null);
   const [loading, setLoading] = useState(true);
@@ -42,14 +43,26 @@ export const PropertyDetailPage: React.FC = () => {
     socketService.onAvailabilityUpdated((data) => {
       if (data.propertyId === id) {
         setProperty(prev => prev ? { ...prev, bedsAvailable: data.bedsAvailable } : null);
-        addToast(`Only ${data.bedsAvailable} bed${data.bedsAvailable !== 1 ? 's' : ''} left!`, 'warning');
+        toast(`Only ${data.bedsAvailable} bed${data.bedsAvailable !== 1 ? 's' : ''} left!`, {
+          icon: '⚠️',
+          style: {
+            background: '#FEF3C7',
+            color: '#92400E',
+          },
+        });
       }
     });
 
     socketService.onBookingActivity((data) => {
       if (data.propertyId === id) {
         setLastBookedTime(data.timestamp);
-        addToast(data.message, 'info');
+        toast(data.message, {
+          icon: '🔥',
+          style: {
+            background: '#DBEAFE',
+            color: '#1E40AF',
+          },
+        });
       }
     });
 
@@ -58,7 +71,7 @@ export const PropertyDetailPage: React.FC = () => {
       socketService.removeAllListeners();
       socketService.disconnect();
     };
-  }, [id, addToast]);
+  }, [id]);
 
   // Fetch property data
   useEffect(() => {
@@ -115,13 +128,86 @@ export const PropertyDetailPage: React.FC = () => {
       });
       
       setProperty(prev => prev ? { ...prev, bedsAvailable: newAvailability } : null);
-      addToast('Availability updated successfully!', 'success');
+      toast.success('Availability updated successfully!');
     } catch (err) {
-      addToast('Failed to update availability', 'error');
+      toast.error('Failed to update availability');
       console.error('Error updating availability:', err);
     } finally {
       setUpdatingAvailability(false);
     }
+  };
+
+  const handleContactOwner = async () => {
+    if (!property) return;
+    
+    try {
+      // Log the contact attempt
+      await api.post(`/api/properties/${id}/activity`, {
+        type: 'contact',
+        message: 'Tenant contacted owner'
+      });
+      
+      toast.success('Contact request sent! Owner will be notified.');
+      
+      // In a real app, this would open a contact modal or send an email
+      // For now, we'll just show a success message
+    } catch (err) {
+      toast.error('Failed to contact owner');
+      console.error('Error contacting owner:', err);
+    }
+  };
+
+  const handleBookNow = async () => {
+    if (!property || property.bedsAvailable === 0) {
+      toast.error('No beds available for booking');
+      return;
+    }
+    
+    try {
+      // Create a booking request
+      await api.post(`/api/properties/${id}/book`, {
+        bedsRequested: 1 // Default to 1 bed
+      });
+      
+      toast.success('Booking request submitted! Owner will contact you soon.');
+      
+      // Update local state to reflect the booking
+      setProperty(prev => prev ? { 
+        ...prev, 
+        bedsAvailable: prev.bedsAvailable - 1 
+      } : null);
+      
+      // Log the booking activity
+      await api.post(`/api/properties/${id}/activity`, {
+        type: 'booking',
+        message: 'New booking request received'
+      });
+      
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || 'Failed to submit booking request');
+      console.error('Error booking property:', err);
+    }
+  };
+
+  const handleWriteReview = () => {
+    // Scroll to the reviews section and focus on the review form
+    setActiveTab('reviews');
+    
+    // Scroll to reviews section after tab change
+    setTimeout(() => {
+      const reviewsSection = document.querySelector('[data-tab="reviews"]');
+      if (reviewsSection) {
+        reviewsSection.scrollIntoView({ behavior: 'smooth' });
+      }
+    }, 100);
+    
+    toast('Switched to reviews section. Share your experience!', {
+      icon: '📝',
+      style: {
+        background: '#F3F4F6',
+        color: '#374151',
+      },
+    });
   };
 
   const getUrgencyLevel = (available: number, total: number) => {
@@ -129,12 +215,6 @@ export const PropertyDetailPage: React.FC = () => {
     if (ratio <= 0.2) return { level: 'high', color: 'bg-red-500', textColor: 'text-red-600' };
     if (ratio <= 0.5) return { level: 'medium', color: 'bg-yellow-500', textColor: 'text-yellow-600' };
     return { level: 'low', color: 'bg-green-500', textColor: 'text-green-600' };
-  };
-
-  const getViewerUrgencyColor = (count: number) => {
-    if (count > 5) return 'text-red-600 bg-red-100';
-    if (count > 2) return 'text-yellow-600 bg-yellow-100';
-    return 'text-green-600 bg-green-100';
   };
 
   const formatTimeAgo = (timestamp: string) => {
@@ -156,37 +236,30 @@ export const PropertyDetailPage: React.FC = () => {
   };
 
   if (loading) {
-    return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 rounded mb-4"></div>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2">
-              <div className="h-64 bg-gray-200 rounded mb-6"></div>
-              <div className="h-32 bg-gray-200 rounded"></div>
-            </div>
-            <div className="h-96 bg-gray-200 rounded"></div>
-          </div>
-        </div>
-      </div>
-    );
+    return <PropertyDetailSkeleton />;
   }
 
   if (error || !property) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"
+      >
         <div className="text-center">
           <div className="text-red-600 text-lg font-medium mb-2">
             {error || 'Property not found'}
           </div>
-          <button
+          <motion.button
             onClick={() => navigate('/properties')}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md"
           >
             Back to Properties
-          </button>
+          </motion.button>
         </div>
-      </div>
+      </motion.div>
     );
   }
 
@@ -194,56 +267,109 @@ export const PropertyDetailPage: React.FC = () => {
   const isOwner = user?.role === 'owner' && user?.id === property.ownerId;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <ToastContainer toasts={toasts} onRemove={removeToast} />
-      
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"
+    >
       {/* Back Button */}
-      <button
+      <motion.button
         onClick={() => navigate('/properties')}
+        whileHover={{ x: -5 }}
         className="mb-6 text-blue-600 hover:text-blue-800 font-medium"
       >
         ← Back to Properties
-      </button>
+      </motion.button>
 
       {/* Header with Viewer Count */}
-      <div className="flex justify-between items-start mb-8">
+      <motion.div
+        initial={{ y: -20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.1 }}
+        className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-8 gap-4"
+      >
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">{property.location}</h1>
-          <div className="flex items-center gap-4">
-            <span className="text-2xl font-bold text-blue-600">
-              ₹{property.rent.toLocaleString()}/month
-            </span>
-            <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm capitalize">
+          <motion.h1 
+            className="text-3xl font-bold text-gray-900 mb-2"
+            initial={{ x: -20, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            transition={{ delay: 0.2 }}
+          >
+            {property.location}
+          </motion.h1>
+          <div className="flex flex-wrap items-center gap-4">
+            <motion.span 
+              className="text-2xl font-bold text-blue-600"
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ delay: 0.3, type: "spring" }}
+            >
+              ₹<AnimatedCounter value={property.rent} />/month
+            </motion.span>
+            <motion.span 
+              className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm capitalize"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.4 }}
+            >
               {property.propertyType}
-            </span>
+            </motion.span>
             {property.verified && (
-              <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">
+              <motion.span 
+                className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium"
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 0.5, type: "spring" }}
+              >
                 ✓ Verified
-              </span>
+              </motion.span>
             )}
           </div>
         </div>
         
         {viewerCount > 0 && (
-          <div className={`flex items-center gap-2 px-3 py-2 rounded-full text-sm font-medium ${getViewerUrgencyColor(viewerCount)}`}>
-            <div className="w-2 h-2 bg-current rounded-full animate-pulse"></div>
-            <span>🔴 {viewerCount} people viewing now</span>
-          </div>
+          <motion.div
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ delay: 0.6 }}
+          >
+            <LiveIndicator 
+              count={viewerCount} 
+              label="people viewing now" 
+              variant="viewers"
+            />
+          </motion.div>
         )}
-      </div>
+      </motion.div>
 
       {/* Main Content */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left Column - Property Details */}
-        <div className="lg:col-span-2">
+        <motion.div
+          initial={{ x: -50, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          transition={{ delay: 0.3 }}
+          className="lg:col-span-2"
+        >
           {/* Image Gallery (Mock) */}
-          <div className="bg-gray-200 rounded-lg h-64 mb-6 flex items-center justify-center">
+          <motion.div
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.4 }}
+            className="bg-gray-200 rounded-lg h-64 mb-6 flex items-center justify-center"
+          >
             <div className="text-center text-gray-500">
-              <div className="text-4xl mb-2">🏠</div>
+              <motion.div 
+                className="text-4xl mb-2"
+                animate={{ rotate: [0, 10, -10, 0] }}
+                transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
+              >
+                🏠
+              </motion.div>
               <p>Property Images</p>
               <p className="text-sm">(Gallery coming soon)</p>
             </div>
-          </div>
+          </motion.div>
 
           {/* Neighborhood DNA Component */}
           <div className="mb-6">
@@ -367,7 +493,9 @@ export const PropertyDetailPage: React.FC = () => {
           )}
 
           {activeTab === 'reviews' && (
-            <ReviewsSection propertyId={id!} />
+            <div data-tab="reviews">
+              <ReviewsSection propertyId={id!} />
+            </div>
           )}
 
           {activeTab === 'activity' && (
@@ -390,12 +518,20 @@ export const PropertyDetailPage: React.FC = () => {
               )}
             </div>
           )}
-        </div>
+        </motion.div>
 
         {/* Right Column - Availability Card */}
-        <div className="space-y-6">
+        <motion.div
+          initial={{ x: 50, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          transition={{ delay: 0.5 }}
+          className="space-y-6"
+        >
           {/* Availability Card */}
-          <div className="bg-white rounded-lg shadow-md p-6">
+          <motion.div
+            whileHover={{ y: -5 }}
+            className="bg-white rounded-lg shadow-md p-6"
+          >
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Availability</h3>
             
             {/* Beds Available */}
@@ -403,16 +539,18 @@ export const PropertyDetailPage: React.FC = () => {
               <div className="flex justify-between items-center mb-2">
                 <span className="text-gray-700">Beds Available</span>
                 <span className={`font-bold text-lg ${urgency.textColor}`}>
-                  {property.bedsAvailable}/{property.totalBeds}
+                  <AnimatedCounter value={property.bedsAvailable} />/{property.totalBeds}
                 </span>
               </div>
               
               {/* Urgency Meter */}
               <div className="w-full bg-gray-200 rounded-full h-3 mb-2">
-                <div
+                <motion.div
                   className={`h-3 rounded-full ${urgency.color} transition-all duration-300`}
-                  style={{ width: `${(property.bedsAvailable / property.totalBeds) * 100}%` }}
-                ></div>
+                  initial={{ width: 0 }}
+                  animate={{ width: `${(property.bedsAvailable / property.totalBeds) * 100}%` }}
+                  transition={{ delay: 0.8, duration: 1 }}
+                ></motion.div>
               </div>
               <p className={`text-sm ${urgency.textColor} font-medium`}>
                 {urgency.level === 'high' && 'High Demand - Book Soon!'}
@@ -440,7 +578,7 @@ export const PropertyDetailPage: React.FC = () => {
                     className="w-20 px-2 py-1 border border-gray-300 rounded text-center"
                     id="availability-input"
                   />
-                  <button
+                  <motion.button
                     onClick={() => {
                       const input = document.getElementById('availability-input') as HTMLInputElement;
                       const newValue = parseInt(input.value);
@@ -449,68 +587,108 @@ export const PropertyDetailPage: React.FC = () => {
                       }
                     }}
                     disabled={updatingAvailability}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
                     className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 disabled:bg-blue-400"
                   >
                     {updatingAvailability ? 'Updating...' : 'Update'}
-                  </button>
+                  </motion.button>
                 </div>
               </div>
             )}
-          </div>
+          </motion.div>
 
           {/* Recent Activity Banner */}
           {lastBookedTime && (
-            <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+            <motion.div
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              whileHover={{ scale: 1.02 }}
+              className="bg-orange-50 border border-orange-200 rounded-lg p-4"
+            >
               <div className="flex items-center gap-2">
-                <span className="text-orange-600">🔥</span>
+                <motion.span 
+                  className="text-orange-600"
+                  animate={{ rotate: [0, 15, -15, 0] }}
+                  transition={{ duration: 0.5, repeat: Infinity, repeatDelay: 2 }}
+                >
+                  🔥
+                </motion.span>
                 <span className="text-orange-800 font-medium">
                   Booked {formatTimeAgo(lastBookedTime)}
                 </span>
               </div>
-            </div>
+            </motion.div>
           )}
 
           {/* Trust Scores */}
-          <div className="bg-white rounded-lg shadow-md p-6">
+          <motion.div
+            whileHover={{ y: -5 }}
+            className="bg-white rounded-lg shadow-md p-6"
+          >
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Trust Scores</h3>
             <div className="space-y-3">
-              <div className="flex justify-between items-center">
+              <motion.div 
+                className="flex justify-between items-center"
+                whileHover={{ x: 5 }}
+              >
                 <span className="text-gray-700">Deposit Return</span>
                 <span className="font-bold text-green-600">
-                  {property.depositScore || 0}%
+                  <AnimatedCounter value={property.depositScore || 0} suffix="%" />
                 </span>
-              </div>
-              <div className="flex justify-between items-center">
+              </motion.div>
+              <motion.div 
+                className="flex justify-between items-center"
+                whileHover={{ x: 5 }}
+              >
                 <span className="text-gray-700">Reality Rating</span>
                 <span className="font-bold text-green-600">
-                  {property.realityScore || 0}/5
+                  <AnimatedCounter value={property.realityScore || 0} suffix="/5" />
                 </span>
-              </div>
-              <div className="flex justify-between items-center">
+              </motion.div>
+              <motion.div 
+                className="flex justify-between items-center"
+                whileHover={{ x: 5 }}
+              >
                 <span className="text-gray-700">Reviews</span>
                 <span className="font-bold text-gray-700">
-                  {property.reviewCount || 0}
+                  <AnimatedCounter value={property.reviewCount || 0} />
                 </span>
-              </div>
+              </motion.div>
             </div>
-          </div>
+          </motion.div>
 
           {/* Action Buttons */}
           <div className="space-y-3">
-            <button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-md transition-colors duration-200">
+            <motion.button 
+              onClick={() => handleContactOwner()}
+              whileHover={{ scale: 1.02, y: -2 }}
+              whileTap={{ scale: 0.98 }}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-md transition-colors duration-200"
+            >
               Contact Owner
-            </button>
-            <button className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-4 rounded-md transition-colors duration-200">
+            </motion.button>
+            <motion.button 
+              onClick={() => handleBookNow()}
+              whileHover={{ scale: 1.02, y: -2 }}
+              whileTap={{ scale: 0.98 }}
+              className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-4 rounded-md transition-colors duration-200"
+            >
               Book Now
-            </button>
+            </motion.button>
             {!isOwner && (
-              <button className="w-full border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium py-3 px-4 rounded-md transition-colors duration-200">
+              <motion.button 
+                onClick={() => handleWriteReview()}
+                whileHover={{ scale: 1.02, y: -2 }}
+                whileTap={{ scale: 0.98 }}
+                className="w-full border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium py-3 px-4 rounded-md transition-colors duration-200"
+              >
                 Write Review
-              </button>
+              </motion.button>
             )}
           </div>
-        </div>
+        </motion.div>
       </div>
-    </div>
+    </motion.div>
   );
 };

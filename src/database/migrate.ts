@@ -1,20 +1,34 @@
-import { readFile } from 'fs/promises';
+import { readFile, readdir } from 'fs/promises';
 import { join } from 'path';
 import pool from '../config/database.js';
 import { logger } from '../utils/index.js';
 
 console.log(">>> SCRIPT STARTED: migrate.ts is running");
+
 export async function runMigrations() {
   try {
     logger.info('Running database migrations...');
     
-    // Read and execute the initial schema migration
-    const migrationPath = join(process.cwd(), 'src/database/migrations/001_initial_schema.sql');
-    const migrationSQL = await readFile(migrationPath, 'utf-8');
+    // Get all migration files and sort them
+    const migrationsDir = join(process.cwd(), 'src/database/migrations');
+    const migrationFiles = await readdir(migrationsDir);
+    const sqlFiles = migrationFiles
+      .filter(file => file.endsWith('.sql'))
+      .sort(); // This will sort them numerically: 001_, 002_, 003_, etc.
     
-    await pool.query(migrationSQL);
-    logger.info('Database migrations completed successfully');
+    logger.info(`Found ${sqlFiles.length} migration files`);
     
+    // Run each migration in order
+    for (const file of sqlFiles) {
+      logger.info(`Running migration: ${file}`);
+      const migrationPath = join(migrationsDir, file);
+      const migrationSQL = await readFile(migrationPath, 'utf-8');
+      
+      await pool.query(migrationSQL);
+      logger.info(`Completed migration: ${file}`);
+    }
+    
+    logger.info('All database migrations completed successfully');
     return true;
   } catch (error) {
     logger.error('Migration failed:', error);

@@ -7,6 +7,8 @@ export interface Property {
   bedsAvailable: number;
   totalBeds: number;
   verified: boolean;
+  latitude?: number;
+  longitude?: number;
   nightlifeScore: number;
   transitScore: number;
   safetyScore: number;
@@ -23,6 +25,8 @@ export interface CreatePropertyDto {
   propertyType: 'apartment' | 'house' | 'condo' | 'studio';
   bedsAvailable?: number;
   totalBeds?: number;
+  latitude?: number;
+  longitude?: number;
   nightlifeScore?: number;
   transitScore?: number;
   safetyScore?: number;

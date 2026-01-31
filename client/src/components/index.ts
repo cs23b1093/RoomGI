@@ -17,4 +17,11 @@ export { PropertyMarker } from './PropertyMarker';
 export { PropertyDetailMiniMap } from './PropertyDetailMiniMap';
 export { CoordinatePicker } from './CoordinatePicker';
 export { MarkerClusterGroup } from './MarkerClusterGroup';
+
+// New animated components
+export { DemoBanner } from './DemoBanner';
+export { Skeleton, PropertyCardSkeleton, PropertyDetailSkeleton } from './SkeletonLoader';
+export { AnimatedCounter } from './AnimatedCounter';
+export { LiveIndicator } from './LiveIndicator';
+
 export type { ToastMessage } from './Toast';
