@@ -140,6 +140,12 @@ export const PropertyDetailPage: React.FC = () => {
   const handleContactOwner = async () => {
     if (!property) return;
     
+    // Prevent owners from contacting themselves
+    if (user?.id === property.ownerId) {
+      toast.error("You can't contact yourself!");
+      return;
+    }
+    
     try {
       // Log the contact attempt
       await api.post(`/api/properties/${id}/activity`, {
@@ -160,6 +166,12 @@ export const PropertyDetailPage: React.FC = () => {
   const handleBookNow = async () => {
     if (!property || property.bedsAvailable === 0) {
       toast.error('No beds available for booking');
+      return;
+    }
+    
+    // Prevent owners from booking their own properties
+    if (user?.id === property.ownerId) {
+      toast.error("You can't book your own property!");
       return;
     }
     
@@ -660,23 +672,38 @@ export const PropertyDetailPage: React.FC = () => {
 
           {/* Action Buttons */}
           <div className="space-y-3">
-            <motion.button 
-              onClick={() => handleContactOwner()}
-              whileHover={{ scale: 1.02, y: -2 }}
-              whileTap={{ scale: 0.98 }}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-md transition-colors duration-200"
-            >
-              Contact Owner
-            </motion.button>
-            <motion.button 
-              onClick={() => handleBookNow()}
-              whileHover={{ scale: 1.02, y: -2 }}
-              whileTap={{ scale: 0.98 }}
-              className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-4 rounded-md transition-colors duration-200"
-            >
-              Book Now
-            </motion.button>
-            {!isOwner && (
+            {/* Only show Contact Owner and Book Now buttons if user is not the owner */}
+            {user?.id !== property.ownerId && (
+              <>
+                <motion.button 
+                  onClick={() => handleContactOwner()}
+                  whileHover={{ scale: 1.02, y: -2 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-md transition-colors duration-200"
+                >
+                  Contact Owner
+                </motion.button>
+                <motion.button 
+                  onClick={() => handleBookNow()}
+                  whileHover={{ scale: 1.02, y: -2 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-4 rounded-md transition-colors duration-200"
+                >
+                  Book Now
+                </motion.button>
+              </>
+            )}
+            
+            {/* Show owner message if user is the owner */}
+            {user?.id === property.ownerId && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
+                <div className="text-blue-800 font-medium mb-1">This is your property</div>
+                <div className="text-blue-600 text-sm">You can manage availability above</div>
+              </div>
+            )}
+            
+            {/* Write Review button - available for all users except owners */}
+            {user?.id !== property.ownerId && (
               <motion.button 
                 onClick={() => handleWriteReview()}
                 whileHover={{ scale: 1.02, y: -2 }}
