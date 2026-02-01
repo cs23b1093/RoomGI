@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { Toaster } from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import { ProtectedRoute, Layout, ErrorBoundary } from './components';
+import { ProtectedRoute, Layout, ErrorBoundary, AddPropertyForm } from './components';
 import { DemoBanner } from './components/DemoBanner';
 import { LoginPage, RegisterPage, HomePage, PropertiesPage, PropertiesMapPage, PropertyDetailPage, OwnerDashboard, NotFoundPage } from './pages';
 
@@ -132,8 +132,10 @@ const AppRoutes: React.FC = () => {
                   transition={{ duration: 0.3 }}
                   className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"
                 >
-                  <h1 className="text-3xl font-bold text-gray-900">Add Property</h1>
-                  <p className="text-gray-600 mt-2">Property creation form coming soon...</p>
+                  <AddPropertyForm 
+                    onSuccess={() => window.location.href = '/owner/dashboard'}
+                    onCancel={() => window.history.back()}
+                  />
                 </motion.div>
               </Layout>
             </ProtectedRoute>

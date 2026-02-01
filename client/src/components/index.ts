@@ -23,5 +23,6 @@ export { DemoBanner } from './DemoBanner';
 export { Skeleton, PropertyCardSkeleton, PropertyDetailSkeleton } from './SkeletonLoader';
 export { AnimatedCounter } from './AnimatedCounter';
 export { LiveIndicator } from './LiveIndicator';
+export { AddPropertyForm } from './AddPropertyForm';
 
 export type { ToastMessage } from './Toast';
