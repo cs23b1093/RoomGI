@@ -151,33 +151,6 @@ const HomePage: React.FC = () => {
           </div>
         )}
 
-        {/* Statistics Section */}
-        <div className="mt-16 bg-white/70 backdrop-blur-sm rounded-2xl p-8 border border-gray-200">
-          <div className="text-center mb-8">
-            <h2 className="text-2xl font-semibold text-gray-800 mb-2">
-              Trusted by Students and Professionals
-            </h2>
-            <p className="text-gray-600">
-              Join our growing community of transparent rental experiences
-            </p>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
-            <div>
-              <div className="text-3xl font-bold text-blue-600 mb-2">1000+</div>
-              <div className="text-gray-600">Verified Properties</div>
-            </div>
-            <div>
-              <div className="text-3xl font-bold text-green-600 mb-2">5000+</div>
-              <div className="text-gray-600">Authentic Reviews</div>
-            </div>
-            <div>
-              <div className="text-3xl font-bold text-purple-600 mb-2">95%</div>
-              <div className="text-gray-600">User Satisfaction</div>
-            </div>
-          </div>
-        </div>
-
         {/* Bottom CTA */}
         <div className="mt-16 text-center">
           <p className="text-gray-500 text-lg mb-4">

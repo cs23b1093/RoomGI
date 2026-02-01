@@ -368,17 +368,6 @@ export const PropertyDetailPage: React.FC = () => {
             transition={{ delay: 0.4 }}
             className="mb-6"
           >
-            {/* Debug: Show what we're getting from the API */}
-            <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md text-xs sm:text-sm">
-              <strong>Debug - Images Data:</strong><br/>
-              Type: {typeof property.images}<br/>
-              Is Array: {Array.isArray(property.images) ? 'Yes' : 'No'}<br/>
-              Length: {property.images?.length || 0}<br/>
-              <div className="mt-2 break-all">
-                Raw Data: {JSON.stringify(property.images)}
-              </div>
-            </div>
-
             {/* Responsive image display logic */}
             {property.images && Array.isArray(property.images) && property.images.length > 0 ? (
               <div className="space-y-4">
