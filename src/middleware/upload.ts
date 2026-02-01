@@ -1,10 +1,13 @@
 import multer from 'multer';
-import { storage } from '../config/cloudinary.js';
+import { cloudinaryStorage } from '../config/cloudinary-storage.js';
 import { Request, Response, NextFunction } from 'express';
 
-// Configure multer with Cloudinary storage
+// Configure multer with our custom Cloudinary storage
 const upload = multer({
-  storage: storage,
+  storage: cloudinaryStorage({
+    folder: 'roomgi/properties',
+    allowedFormats: ['jpg', 'jpeg', 'png', 'webp']
+  }),
   limits: {
     fileSize: 5 * 1024 * 1024, // 5MB limit per file
     files: 10, // Maximum 10 files
